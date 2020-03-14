@@ -1,4 +1,5 @@
 """
+Wire color of DS18B20 - Red - Vcc, Black - Ground, Yellow - Data
 MJRoBot IoT Local Weather Station
 Sensor Data - Station:
 	Temperature: External (not physicaly at station)
