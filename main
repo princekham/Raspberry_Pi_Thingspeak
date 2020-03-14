@@ -1,5 +1,9 @@
 """
+Referred to from https://github.com/Mjrovai/RPi-NodeMCU-Weather-Station/blob/master/IoT%20Weather%20Station/localDataToTS_v1_EXT.py
+https://www.instructables.com/id/IoT-Weather-Station-With-RPi-and-ESP8266/
+
 Wire color of DS18B20 - Red - Vcc, Black - Ground, Yellow - Data
+
 MJRoBot IoT Local Weather Station
 Sensor Data - Station:
 	Temperature: External (not physicaly at station)
@@ -23,76 +27,39 @@ import datetime
 import thingspeak  
 
 # ThingSpeak channel credentials 
-chId = 483033
-tsKey='ENTER WITH YOUR CHANNEL WRITE KEY'
+chId = 1019050 # This is channel ID for Hot Room
+tsKey='R2IJUEPZ5LE1AHG6' # This is API key for Office Hot Room
 tsUrl='https://api.thingspeak.com/update'
 ts = thingspeak.Channel(chId, tsUrl ,tsKey)
 
 # DS18B20 1-Wire library
 from w1thermsensor import W1ThermSensor 
-ds18b20Sensor = W1ThermSensor() # By default GPIO 4 is used by library
-
-# DHT22 Library 
-import Adafruit_DHT
-DHT22Sensor = Adafruit_DHT.DHT22
-DHTpin = 16
-
-# BMP180 library
-import Adafruit_BMP.BMP085 as BMP085 
-bmp180Sensor = BMP085.BMP085()
-
-# Global Variables
-global altReal
-altReal = 950
-
+sensor1 = W1ThermSensor(W1ThermSensor.THERM_SENSOR_DS18B20,"030797799d95" ) # By default GPIO 4 is used by library
+sensor2 = W1ThermSensor(W1ThermSensor.THERM_SENSOR_DS18B20, "0117c1f918ff ")
 # Get data (from local sensors)
 def getLocalData():
+	
 	global timeString
-	global humLab
+	global tempIn
 	global tempExt
-	global tempLab
-	global presSL
-	global altLab
-	global presAbs
 	
 	# Get time of reading
 	now = datetime.datetime.now()
 	timeString = now.strftime("%Y-%m-%d %H:%M")
 	
-	# Read Outside Temperature (1 meter distance)
-	tempExt = round(ds18b20Sensor.get_temperature(), 1)
+	# Read Outside Temperature of Hot Room
+	tempExt = round(sensor1.get_temperature(), 1)
+	tempIn = round(sensor2.get_temperature(), 1)
 	
-	tempLab, presAbs, altLab, presSL = bmp180GetData(altReal) 
-	
-	humDHT, tempDHT = Adafruit_DHT.read_retry(DHT22Sensor, DHTpin)
-	if humDHT is not None and tempDHT is not None:
-		humLab = round (humDHT)
 
-# Get BMP180 data		
-def bmp180GetData(altitude):
-	
-	temp = bmp180Sensor.read_temperature()
-	pres = bmp180Sensor.read_pressure()
-	alt =  bmp180Sensor.read_altitude()
-	presSeaLevel = pres / pow(1.0 - altitude/44330.0, 5.255) 
-	
-	temp = round (temp, 1)
-	pres = round (pres/100, 2) # absolute pressure in hPa (or mbar)
-	alt = round (alt)
-	presSeaLevel = round (presSeaLevel/100, 2) # absolute pressure in hPa (or mbar)
 
-	return temp, pres, alt, presSeaLevel
 
-# Send data to ThingSpeak
 def sendDataTs():
-	data = {"field1": tempLab, 
-			"field2": tempExt, 
-			"field3": humLab, 
-			"field4": presSL, 
-			"field5": altLab
+	data = {"field1": tempExt, 
+		"field2": tempIn, 
 			}
 	ts.update(data)
-	print ("[INFO] Data sent for 5 fields: ", tempLab, tempExt, humLab, presSL, altLab)
+	print ("[INFO] Data sent for 2 fields: ", tempExt, tempIn)
   
 # Main function
 def main():	
